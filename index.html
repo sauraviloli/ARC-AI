@@ -6,7 +6,8 @@
   <title>Arc</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,614 +15,658 @@
       --bg: #f7f6f3;
       --surface: #ffffff;
       --border: #e5e4e0;
-      --border-input: #d1cfc9;
-      --text-primary: #1a1915;
-      --text-secondary: #6b6860;
-      --text-tertiary: #9b9890;
+      --border-strong: #d1cfc9;
+      --text-1: #1a1915;
+      --text-2: #6b6860;
+      --text-3: #9b9890;
       --accent: #d97706;
-      --accent-bg: #fef3c7;
-      --user-bubble: #1a1915;
-      --user-text: #fafaf9;
-      --ai-bubble: #ffffff;
+      --user-bg: #1a1915;
+      --user-fg: #fafaf9;
+      --code-bg: #f3f2ef;
       --sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
-      --radius: 18px;
+      --mono: 'Geist Mono', 'Menlo', monospace;
     }
 
     html, body {
-      height: 100%;
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text-primary);
-      overflow: hidden;
-      font-size: 15px;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
+      height: 100%; font-family: var(--sans); background: var(--bg);
+      color: var(--text-1); overflow: hidden; font-size: 15px;
+      line-height: 1.6; -webkit-font-smoothing: antialiased;
     }
 
-    /* ── LAYOUT ── */
-    .app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      max-width: 760px;
-      margin: 0 auto;
-    }
+    .app { display: flex; flex-direction: column; height: 100vh; max-width: 780px; margin: 0 auto; }
 
-    /* ── HEADER ── */
+    /* HEADER */
     .header {
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      position: relative;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      background: var(--surface); position: relative;
     }
 
-    .header-logo {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
+    .logo { display: flex; align-items: center; gap: 9px; }
 
     .logo-mark {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: var(--user-bubble);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 28px; height: 28px; border-radius: 8px; background: var(--user-bg);
+      display: flex; align-items: center; justify-content: center;
     }
 
-    .logo-mark svg { width: 16px; height: 16px; }
+    .logo-mark svg { width: 15px; height: 15px; }
+    .logo-name { font-size: 17px; font-weight: 500; letter-spacing: -0.3px; }
 
-    .logo-name {
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--text-primary);
-      letter-spacing: -0.3px;
+    .new-btn {
+      position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+      display: flex; align-items: center; gap: 5px; padding: 6px 12px;
+      border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text-2); font-size: 13px; font-family: var(--sans);
+      cursor: pointer; transition: all 0.15s;
     }
 
-    .new-chat-btn {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text-secondary);
-      font-size: 13px;
-      font-family: var(--sans);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
+    .new-btn:hover { background: var(--bg); color: var(--text-1); border-color: var(--border-strong); }
 
-    .new-chat-btn:hover {
-      background: var(--bg);
-      color: var(--text-primary);
-      border-color: var(--border-input);
-    }
-
-    /* ── MESSAGES ── */
+    /* MESSAGES */
     .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 32px 24px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      scroll-behavior: smooth;
+      flex: 1; overflow-y: auto; padding: 28px 24px 12px;
+      display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth;
     }
 
-    .messages::-webkit-scrollbar { width: 6px; }
-    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar { width: 5px; }
     .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .messages::-webkit-scrollbar-thumb:hover { background: var(--border-input); }
 
-    /* Message groups */
-    .msg-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      margin-bottom: 16px;
-      animation: msg-in 0.2s ease both;
-    }
-
-    @keyframes msg-in {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
+    .msg-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 20px; animation: fadein 0.22s ease both; }
     .msg-group.user { align-items: flex-end; }
     .msg-group.ai { align-items: flex-start; }
 
-    .msg-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-tertiary);
-      padding: 0 4px;
-      margin-bottom: 4px;
-    }
+    @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
     .bubble {
-      max-width: 80%;
-      padding: 12px 16px;
-      border-radius: var(--radius);
-      font-size: 15px;
-      line-height: 1.65;
-      white-space: pre-wrap;
-      word-break: break-word;
+      max-width: 82%; padding: 11px 15px; border-radius: 16px;
+      font-size: 15px; line-height: 1.7; word-break: break-word;
     }
 
     .msg-group.user .bubble {
-      background: var(--user-bubble);
-      color: var(--user-text);
-      border-bottom-right-radius: 5px;
+      background: var(--user-bg); color: var(--user-fg);
+      border-bottom-right-radius: 4px; white-space: pre-wrap;
     }
 
     .msg-group.ai .bubble {
-      background: var(--ai-bubble);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 5px;
+      background: var(--surface); color: var(--text-1);
+      border: 1px solid var(--border); border-bottom-left-radius: 4px;
+    }
+
+    /* MARKDOWN INSIDE AI BUBBLE */
+    .bubble.md p { margin-bottom: 0.75em; }
+    .bubble.md p:last-child { margin-bottom: 0; }
+    .bubble.md h1,.bubble.md h2,.bubble.md h3 { font-weight: 500; margin: 1em 0 0.4em; line-height: 1.3; }
+    .bubble.md h1 { font-size: 1.2em; }
+    .bubble.md h2 { font-size: 1.1em; }
+    .bubble.md h3 { font-size: 1em; color: var(--text-2); }
+    .bubble.md ul,.bubble.md ol { padding-left: 1.4em; margin: 0.5em 0 0.75em; }
+    .bubble.md li { margin-bottom: 0.35em; }
+    .bubble.md li:last-child { margin-bottom: 0; }
+    .bubble.md strong { font-weight: 600; color: var(--text-1); }
+    .bubble.md em { font-style: italic; }
+    .bubble.md hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+    .bubble.md blockquote {
+      border-left: 3px solid var(--border-strong); margin: 0.5em 0;
+      padding: 0.3em 0 0.3em 1em; color: var(--text-2);
+    }
+
+    /* Code inside markdown */
+    .bubble.md code {
+      font-family: var(--mono); font-size: 13px;
+      background: var(--code-bg); border: 1px solid var(--border);
+      padding: 1px 5px; border-radius: 4px; color: #c7254e;
+    }
+
+    .bubble.md pre {
+      background: #1e1e1e; border-radius: 10px; margin: 0.75em 0;
+      overflow: hidden; position: relative;
+    }
+
+    .bubble.md pre code {
+      display: block; padding: 14px 16px; font-size: 13px; line-height: 1.6;
+      color: #d4d4d4; background: transparent; border: none; overflow-x: auto;
+      white-space: pre; border-radius: 0;
+    }
+
+    /* Code block toolbar */
+    .code-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px 6px; background: #2d2d2d; border-bottom: 1px solid #3d3d3d;
+    }
+
+    .code-lang { font-family: var(--mono); font-size: 12px; color: #888; }
+
+    .code-actions { display: flex; gap: 6px; }
+
+    .code-btn {
+      display: flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 5px; border: 1px solid #444;
+      background: transparent; color: #aaa; font-size: 12px;
+      font-family: var(--sans); cursor: pointer; transition: all 0.15s;
+    }
+
+    .code-btn:hover { background: #3d3d3d; color: #ddd; }
+    .code-btn svg { width: 12px; height: 12px; }
+
+    /* FILE DOWNLOAD CARD */
+    .file-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 10px; margin-top: 10px;
+      border: 1px solid var(--border); background: var(--code-bg);
+      text-decoration: none; color: var(--text-1); transition: all 0.15s;
+      cursor: pointer;
+    }
+
+    .file-card:hover { border-color: var(--border-strong); background: #eeede9; }
+
+    .file-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 18px;
+    }
+
+    .file-icon.html { background: #fef2f2; }
+    .file-icon.pptx { background: #fff7ed; }
+    .file-icon.code { background: #f0fdf4; }
+    .file-icon.txt { background: #f0f9ff; }
+
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: 12px; color: var(--text-2); margin-top: 1px; }
+
+    .file-dl {
+      display: flex; align-items: center; gap: 4px; padding: 5px 11px;
+      border-radius: 6px; border: 1px solid var(--border-strong);
+      background: var(--surface); font-size: 12px; color: var(--text-2);
+      font-family: var(--sans); cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+    }
+
+    .file-dl:hover { background: var(--user-bg); color: white; border-color: var(--user-bg); }
+
+    /* PPTX BUILDING CARD */
+    .pptx-building {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 10px; margin-top: 10px;
+      border: 1px solid var(--border); background: var(--code-bg);
+      font-size: 14px; color: var(--text-2);
     }
 
     /* Image bubble */
     .img-bubble {
-      max-width: 80%;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      background: var(--ai-bubble);
-      border-bottom-left-radius: 5px;
+      max-width: 82%; border-radius: 16px; border: 1px solid var(--border);
+      overflow: hidden; background: var(--surface); border-bottom-left-radius: 4px;
     }
 
     .img-generating {
-      padding: 24px 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text-secondary);
-      font-size: 14px;
+      padding: 20px; display: flex; align-items: center; gap: 10px;
+      color: var(--text-2); font-size: 14px;
     }
 
-    .img-spinner {
-      width: 16px; height: 16px;
-      border: 2px solid var(--border);
-      border-top-color: var(--text-secondary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      flex-shrink: 0;
+    .spinner {
+      width: 15px; height: 15px; border: 2px solid var(--border);
+      border-top-color: var(--text-2); border-radius: 50%;
+      animation: spin 0.75s linear infinite; flex-shrink: 0;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .img-bubble img {
-      width: 100%;
-      display: block;
-      max-height: 400px;
-      object-fit: cover;
-    }
+    .img-bubble img { width: 100%; display: block; max-height: 420px; object-fit: cover; }
 
     /* Typing dots */
-    .typing-bubble {
-      background: var(--ai-bubble);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      border-bottom-left-radius: 5px;
-      padding: 14px 18px;
-      display: flex;
-      gap: 5px;
-      align-items: center;
+    .typing-wrap { display: flex; align-items: flex-start; gap: 0; margin-bottom: 20px; animation: fadein 0.22s ease both; }
+    .typing-dots {
+      padding: 14px 18px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; border-bottom-left-radius: 4px;
+      display: flex; gap: 5px; align-items: center;
     }
 
-    .typing-bubble span {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--text-tertiary);
+    .typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-3);
       animation: tdot 1.2s ease-in-out infinite;
     }
 
-    .typing-bubble span:nth-child(2) { animation-delay: 0.15s; }
-    .typing-bubble span:nth-child(3) { animation-delay: 0.3s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
 
     @keyframes tdot {
       0%,60%,100% { transform: translateY(0); opacity: 0.4; }
       30% { transform: translateY(-5px); opacity: 1; }
     }
 
-    /* ── WELCOME ── */
+    /* WELCOME */
     .welcome {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 32px 24px;
-      text-align: center;
-      gap: 10px;
-      animation: msg-in 0.4s ease both;
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 32px 16px;
+      text-align: center; gap: 10px; animation: fadein 0.4s ease both;
     }
 
-    .welcome-avatar {
-      width: 52px; height: 52px;
-      border-radius: 14px;
-      background: var(--user-bubble);
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 6px;
+    .welcome-mark {
+      width: 50px; height: 50px; border-radius: 14px; background: var(--user-bg);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 6px;
     }
 
-    .welcome-avatar svg { width: 28px; height: 28px; }
+    .welcome-mark svg { width: 26px; height: 26px; }
+    .welcome h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.3px; }
+    .welcome p { font-size: 15px; color: var(--text-2); max-width: 340px; line-height: 1.6; }
 
-    .welcome h1 {
-      font-size: 24px;
-      font-weight: 500;
-      letter-spacing: -0.4px;
-      color: var(--text-primary);
+    /* CHIPS */
+    .chips {
+      flex-shrink: 0; display: flex; gap: 7px; flex-wrap: wrap;
+      padding: 12px 24px 8px; justify-content: center;
     }
 
-    .welcome p {
-      font-size: 15px;
-      color: var(--text-secondary);
-      max-width: 340px;
-      line-height: 1.6;
+    .chip {
+      padding: 7px 13px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text-2); font-size: 13px;
+      font-family: var(--sans); cursor: pointer; transition: all 0.15s; white-space: nowrap;
     }
 
-    /* ── SUGGESTION CHIPS ── */
-    .suggestions {
-      flex-shrink: 0;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding: 16px 24px 8px;
-      justify-content: center;
-    }
+    .chip:hover { border-color: var(--border-strong); color: var(--text-1); background: var(--bg); }
 
-    .sug-chip {
-      padding: 8px 14px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text-secondary);
-      font-size: 13.5px;
-      font-family: var(--sans);
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-
-    .sug-chip:hover {
-      border-color: var(--border-input);
-      color: var(--text-primary);
-      background: var(--bg);
-    }
-
-    /* ── INPUT AREA ── */
-    .input-area {
-      flex-shrink: 0;
-      padding: 12px 20px 20px;
-      background: var(--bg);
-    }
+    /* INPUT */
+    .input-area { flex-shrink: 0; padding: 10px 18px 18px; background: var(--bg); }
 
     .input-box {
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      background: var(--surface);
-      border: 1px solid var(--border-input);
-      border-radius: 16px;
-      padding: 10px 10px 10px 16px;
+      display: flex; align-items: flex-end; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 16px; padding: 9px 9px 9px 15px;
       transition: border-color 0.15s, box-shadow 0.15s;
       box-shadow: 0 1px 4px rgba(0,0,0,0.05);
     }
 
-    .input-box:focus-within {
-      border-color: #a8a49e;
-      box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
-    }
+    .input-box:focus-within { border-color: #a8a49e; box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
 
     .input-box textarea {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      font-family: var(--sans);
-      font-size: 15px;
-      color: var(--text-primary);
-      resize: none;
-      max-height: 160px;
-      min-height: 26px;
-      line-height: 1.6;
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: var(--sans); font-size: 15px; color: var(--text-1);
+      resize: none; max-height: 160px; min-height: 26px; line-height: 1.6;
       overflow-y: auto;
     }
 
-    .input-box textarea::placeholder { color: var(--text-tertiary); }
+    .input-box textarea::placeholder { color: var(--text-3); }
 
     .send-btn {
-      width: 34px; height: 34px;
-      border-radius: 10px;
-      background: var(--user-bubble);
-      border: none;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: opacity 0.15s, transform 0.1s;
+      width: 33px; height: 33px; border-radius: 9px; background: var(--user-bg);
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: opacity 0.15s, transform 0.1s;
     }
 
-    .send-btn:hover { opacity: 0.85; }
-    .send-btn:active { transform: scale(0.93); }
-    .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .send-btn svg { width: 15px; height: 15px; }
+    .send-btn:hover { opacity: 0.82; }
+    .send-btn:active { transform: scale(0.92); }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .send-btn svg { width: 14px; height: 14px; }
 
-    .input-hint {
-      text-align: center;
-      font-size: 12px;
-      color: var(--text-tertiary);
-      margin-top: 10px;
-    }
+    .hint { text-align: center; font-size: 12px; color: var(--text-3); margin-top: 9px; }
   </style>
 </head>
 <body>
-
 <div class="app">
 
-  <!-- HEADER -->
   <header class="header">
-    <div class="header-logo">
+    <div class="logo">
       <div class="logo-mark">
-        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="8" cy="8" r="6" stroke="white" stroke-width="1.5"/>
-          <path d="M8 5v3.5l2.5 1.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg viewBox="0 0 15 15" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="7.5" cy="7.5" r="5.5"/>
+          <path d="M7.5 5v3l2 1.2"/>
         </svg>
       </div>
       <span class="logo-name">Arc</span>
     </div>
-    <button class="new-chat-btn" onclick="newChat()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5v14M5 12h14"/>
-      </svg>
+    <button class="new-btn" onclick="newChat()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       New chat
     </button>
   </header>
 
-  <!-- MESSAGES -->
   <div class="messages" id="msgs"></div>
 
-  <!-- WELCOME -->
   <div class="welcome" id="welcome">
-    <div class="welcome-avatar">
-      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="14" cy="14" r="10" stroke="white" stroke-width="1.8"/>
-        <path d="M14 9v5.5l3.5 2" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="welcome-mark">
+      <svg viewBox="0 0 26 26" fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="13" cy="13" r="9"/>
+        <path d="M13 9v4.5l3 1.8"/>
       </svg>
     </div>
     <h1>How can I help you?</h1>
-    <p>Ask me anything — questions, writing, code, analysis, or generate an image.</p>
+    <p>Ask me anything — questions, code, writing, presentations, or generate an image.</p>
   </div>
 
-  <!-- SUGGESTIONS -->
-  <div class="suggestions" id="suggestions">
-    <button class="sug-chip" onclick="send('Explain how machine learning works in simple terms')">Explain machine learning</button>
-    <button class="sug-chip" onclick="send('Write me a short professional bio')">Write a bio</button>
-    <button class="sug-chip" onclick="send('Generate an image of a futuristic city at night')">Generate an image</button>
-    <button class="sug-chip" onclick="send('Give me 5 productivity tips for remote work')">Productivity tips</button>
+  <div class="chips" id="chips">
+    <button class="chip" onclick="send('Explain how neural networks work')">Explain neural networks</button>
+    <button class="chip" onclick="send('Create a presentation about the future of AI with 5 slides')">Make a presentation</button>
+    <button class="chip" onclick="send('Write a responsive HTML landing page for a SaaS product')">Build an HTML page</button>
+    <button class="chip" onclick="send('Generate an image of a futuristic city at sunset')">Generate image</button>
   </div>
 
-  <!-- INPUT -->
   <div class="input-area">
     <div class="input-box">
-      <textarea
-        id="userInput"
-        placeholder="Message Arc…"
-        rows="1"
-        autocomplete="off"
-        spellcheck="true"
-      ></textarea>
-      <button class="send-btn" id="sendBtn" onclick="sendMsg()" aria-label="Send" disabled>
+      <textarea id="userInput" placeholder="Message Arc…" rows="1" autocomplete="off" spellcheck="true"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 19V5M5 12l7-7 7 7"/>
         </svg>
       </button>
     </div>
-    <div class="input-hint">Arc can make mistakes. Verify important information.</div>
+    <div class="hint">Arc can make mistakes. Verify important information.</div>
   </div>
 
 </div>
 
 <script>
-  const msgsEl = document.getElementById('msgs');
-  const inputEl = document.getElementById('userInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const welcomeEl = document.getElementById('welcome');
-  const suggestionsEl = document.getElementById('suggestions');
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const SYSTEM = `You are Arc, a sharp and helpful AI assistant. You respond with well-structured markdown — use headings, bullet points, numbered lists, bold text, and code blocks where appropriate. Never write a wall of text when structure would help.
 
-  const history = [];
-  let isBusy = false;
+When the user asks for code or an HTML page, ALWAYS wrap the full code in a fenced code block with the correct language tag (e.g. \`\`\`html, \`\`\`python, \`\`\`javascript).
 
-  // Auto-resize textarea
-  inputEl.addEventListener('input', () => {
-    inputEl.style.height = 'auto';
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
-    sendBtn.disabled = !inputEl.value.trim();
+When the user asks for a presentation or slide deck, respond ONLY with a valid JSON object — no other text, no markdown fences — in this exact format:
+{"presentation":{"title":"<title>","slides":[{"title":"<slide title>","subtitle":"<optional subtitle, first slide only>","bullets":["bullet 1","bullet 2","bullet 3"]},...]}}
+
+Make presentations 5-8 slides. Each slide should have 3-5 concise bullet points.`;
+
+// ── STATE ────────────────────────────────────────────────────────────────
+const msgsEl   = document.getElementById('msgs');
+const inputEl  = document.getElementById('userInput');
+const sendBtn  = document.getElementById('sendBtn');
+const welcome  = document.getElementById('welcome');
+const chipsEl  = document.getElementById('chips');
+
+let history = [];
+let isBusy  = false;
+
+// ── marked config ────────────────────────────────────────────────────────
+marked.setOptions({ breaks: true, gfm: true });
+
+// Custom renderer for code blocks
+const renderer = new marked.Renderer();
+renderer.code = function(code, lang) {
+  const language = lang || 'text';
+  const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<div class="code-block-wrap" data-lang="${language}" data-raw="${encodeURIComponent(code)}">
+    <div class="code-toolbar">
+      <span class="code-lang">${language}</span>
+      <div class="code-actions">
+        <button class="code-btn" onclick="copyCode(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>
+        <button class="code-btn" onclick="downloadCode(this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+    </div>
+    <pre><code class="language-${language}">${escaped}</code></pre>
+  </div>`;
+};
+marked.use({ renderer });
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+function scrollDown() { msgsEl.scrollTop = msgsEl.scrollHeight; }
+
+function hideWelcome() {
+  welcome.style.display = 'none';
+  chipsEl.style.display = 'none';
+}
+
+function newChat() {
+  msgsEl.innerHTML = '';
+  history = [];
+  isBusy = false;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  welcome.style.display = 'flex';
+  chipsEl.style.display = 'flex';
+}
+
+function send(text) {
+  inputEl.value = text;
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
+  sendBtn.disabled = false;
+  sendMsg();
+}
+
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
+  sendBtn.disabled = !inputEl.value.trim();
+});
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+// ── ADD USER BUBBLE ──────────────────────────────────────────────────────
+function addUser(text) {
+  if (!msgsEl.children.length) hideWelcome();
+  const g = document.createElement('div');
+  g.className = 'msg-group user';
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  b.textContent = text;
+  g.appendChild(b); msgsEl.appendChild(g); scrollDown();
+}
+
+// ── ADD AI BUBBLE (markdown) ─────────────────────────────────────────────
+function addAI(text) {
+  const g = document.createElement('div');
+  g.className = 'msg-group ai';
+  const b = document.createElement('div');
+  b.className = 'bubble md';
+  b.innerHTML = marked.parse(text);
+  g.appendChild(b); msgsEl.appendChild(g); scrollDown();
+  return g;
+}
+
+// ── ADD FILE CARD ────────────────────────────────────────────────────────
+function addFileCard(group, filename, blob, type) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const icons = { html: '🌐', pptx: '📊', js: '📜', py: '🐍', css: '🎨', txt: '📄' };
+  const icon = icons[ext] || '📄';
+  const iconClass = ['html','pptx'].includes(ext) ? ext : ['js','py','css','ts'].includes(ext) ? 'code' : 'txt';
+
+  const card = document.createElement('div');
+  card.className = 'file-card';
+  card.innerHTML = `
+    <div class="file-icon ${iconClass}">${icon}</div>
+    <div class="file-info">
+      <div class="file-name">${filename}</div>
+      <div class="file-meta">${(blob.size / 1024).toFixed(1)} KB · Click to download</div>
+    </div>
+    <button class="file-dl">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Save
+    </button>`;
+  card.onclick = () => triggerDownload(blob, filename);
+
+  const b = group.querySelector('.bubble.md') || group.querySelector('.bubble');
+  if (b) b.appendChild(card);
+  else group.appendChild(card);
+  scrollDown();
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── TYPING INDICATOR ─────────────────────────────────────────────────────
+function addTyping() {
+  const w = document.createElement('div');
+  w.className = 'typing-wrap'; w.id = 'typing';
+  w.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  msgsEl.appendChild(w); scrollDown(); return w;
+}
+
+function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+// ── IMAGE GEN ────────────────────────────────────────────────────────────
+function isImageReq(t) {
+  return /(generate|create|make|draw|show|render|produce|design).*(image|picture|photo|illustration|artwork|painting|sketch)/i.test(t)
+      || /(image|picture|photo|illustration|painting|sketch)\s+(of|showing|depicting)/i.test(t);
+}
+
+function extractImgPrompt(text) {
+  return text.replace(/^(please\s+)?(generate|create|make|draw|show me|render|produce|design)\s+(an?\s+)?(image|picture|photo|illustration|artwork|painting|sketch)(\s+(of|showing|depicting))?\s*/i,'').trim() || text;
+}
+
+function addImageMsg(prompt) {
+  if (!msgsEl.children.length) hideWelcome();
+  const g = document.createElement('div');
+  g.className = 'msg-group ai';
+  const wrap = document.createElement('div');
+  wrap.className = 'img-bubble';
+  const loading = document.createElement('div');
+  loading.className = 'img-generating';
+  loading.innerHTML = '<div class="spinner"></div><span>Generating image…</span>';
+  wrap.appendChild(loading); g.appendChild(wrap); msgsEl.appendChild(g); scrollDown();
+
+  const seed = Math.floor(Math.random() * 999999);
+  const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt + ', high quality, detailed') + '?width=820&height=500&nologo=true&seed=' + seed;
+
+  const img = document.createElement('img');
+  img.onload = () => { loading.remove(); wrap.appendChild(img); scrollDown(); isBusy = false; sendBtn.disabled = !inputEl.value.trim(); };
+  img.onerror = () => { loading.innerHTML = '<span style="color:var(--text-2);font-size:14px">Could not generate image. Try again.</span>'; isBusy = false; sendBtn.disabled = !inputEl.value.trim(); };
+  img.src = url;
+}
+
+// ── CODE ACTIONS ─────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const wrap = btn.closest('.code-block-wrap');
+  const raw = decodeURIComponent(wrap.dataset.raw);
+  navigator.clipboard.writeText(raw).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Copied`;
+    setTimeout(() => btn.innerHTML = orig, 2000);
   });
+}
 
-  inputEl.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMsg();
-    }
-  });
+function downloadCode(btn) {
+  const wrap = btn.closest('.code-block-wrap');
+  const lang = wrap.dataset.lang;
+  const raw = decodeURIComponent(wrap.dataset.raw);
+  const extMap = { html:'html', javascript:'js', js:'js', python:'py', py:'py', css:'css', typescript:'ts', ts:'ts', bash:'sh', shell:'sh', json:'json', sql:'sql', markdown:'md' };
+  const ext = extMap[lang] || 'txt';
+  const blob = new Blob([raw], { type: 'text/plain' });
+  triggerDownload(blob, 'arc-output.' + ext);
+}
 
-  function scrollDown() {
-    msgsEl.scrollTop = msgsEl.scrollHeight;
+// ── PRESENTATION BUILDER ─────────────────────────────────────────────────
+function isPresentationReq(text) {
+  return /(presentation|slide deck|slideshow|slides|pptx|powerpoint)/i.test(text);
+}
+
+async function buildPresentation(jsonData, group) {
+  const { title, slides } = jsonData.presentation;
+
+  // Show building card
+  const b = group.querySelector('.bubble.md');
+  const building = document.createElement('div');
+  building.className = 'pptx-building';
+  building.innerHTML = '<div class="spinner"></div><span>Building presentation…</span>';
+  if (b) b.appendChild(building); else group.appendChild(building);
+  scrollDown();
+
+  try {
+    const res = await fetch('/api/pptx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, slides }),
+    });
+
+    if (!res.ok) throw new Error('Server error');
+
+    const blob = await res.blob();
+    building.remove();
+    const filename = title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '.pptx';
+    addFileCard(group, filename, blob, 'pptx');
+  } catch (err) {
+    building.innerHTML = '<span style="color:var(--text-2)">Could not build PPTX. Slide content is shown above.</span>';
+  }
+}
+
+// ── MAIN SEND ────────────────────────────────────────────────────────────
+async function sendMsg() {
+  if (isBusy) return;
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  inputEl.value = ''; inputEl.style.height = 'auto';
+  sendBtn.disabled = true; isBusy = true;
+
+  addUser(text);
+  history.push({ role: 'user', content: text });
+
+  // Image path
+  if (isImageReq(text)) {
+    addImageMsg(extractImgPrompt(text));
+    history.push({ role: 'assistant', content: '[Generated image]' });
+    return;
   }
 
-  function hideWelcome() {
-    welcomeEl.style.display = 'none';
-    suggestionsEl.style.display = 'none';
-  }
+  addTyping();
 
-  function newChat() {
-    msgsEl.innerHTML = '';
-    history.length = 0;
-    isBusy = false;
-    sendBtn.disabled = true;
-    inputEl.value = '';
-    inputEl.style.height = 'auto';
-    welcomeEl.style.display = 'flex';
-    suggestionsEl.style.display = 'flex';
-  }
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'system', content: SYSTEM }, ...history]
+      })
+    });
 
-  function send(text) {
-    inputEl.value = text;
-    inputEl.style.height = 'auto';
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
-    sendBtn.disabled = false;
-    sendMsg();
-  }
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || 'Something went wrong. Please try again.';
 
-  function addUserMsg(text) {
-    if (msgsEl.children.length === 0) hideWelcome();
-    const group = document.createElement('div');
-    group.className = 'msg-group user';
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = text;
-    group.appendChild(bubble);
-    msgsEl.appendChild(group);
-    scrollDown();
-  }
+    removeTyping();
+    history.push({ role: 'assistant', content: reply });
 
-  function addTyping() {
-    const group = document.createElement('div');
-    group.className = 'msg-group ai';
-    group.id = 'typing-group';
-    const tb = document.createElement('div');
-    tb.className = 'typing-bubble';
-    tb.innerHTML = '<span></span><span></span><span></span>';
-    group.appendChild(tb);
-    msgsEl.appendChild(group);
-    scrollDown();
-    return group;
-  }
-
-  function removeTyping() {
-    const t = document.getElementById('typing-group');
-    if (t) t.remove();
-  }
-
-  function addAiMsg(text) {
-    const group = document.createElement('div');
-    group.className = 'msg-group ai';
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = text;
-    group.appendChild(bubble);
-    msgsEl.appendChild(group);
-    scrollDown();
-  }
-
-  function addImageMsg(prompt) {
-    const group = document.createElement('div');
-    group.className = 'msg-group ai';
-
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'img-bubble';
-
-    const loading = document.createElement('div');
-    loading.className = 'img-generating';
-    loading.innerHTML = '<div class="img-spinner"></div><span>Generating image…</span>';
-    imgWrap.appendChild(loading);
-    group.appendChild(imgWrap);
-    msgsEl.appendChild(group);
-    scrollDown();
-
-    const seed = Math.floor(Math.random() * 999999);
-    const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt + ', high quality, detailed') + '?width=800&height=500&nologo=true&seed=' + seed;
-
-    const img = document.createElement('img');
-    img.onload = () => {
-      loading.remove();
-      imgWrap.appendChild(img);
-      scrollDown();
-      isBusy = false;
-      sendBtn.disabled = !inputEl.value.trim();
-    };
-    img.onerror = () => {
-      loading.innerHTML = '<span style="color:var(--text-secondary);font-size:14px">Could not generate image. Try again.</span>';
-      isBusy = false;
-      sendBtn.disabled = !inputEl.value.trim();
-    };
-    img.src = url;
-  }
-
-  function isImageRequest(text) {
-    return /(generate|create|make|draw|show|render|produce|design).*(image|picture|photo|illustration|artwork|visual|painting|sketch)/i.test(text)
-      || /(image|picture|photo|illustration|painting|sketch)\s+(of|showing|depicting)/i.test(text);
-  }
-
-  function extractPrompt(text) {
-    return text
-      .replace(/^(please\s+)?(generate|create|make|draw|show me|render|produce|design)\s+(an?\s+)?(image|picture|photo|illustration|artwork|painting|sketch)(\s+(of|showing|depicting))?\s*/i, '')
-      .trim() || text;
-  }
-
-  async function sendMsg() {
-    if (isBusy) return;
-    const text = inputEl.value.trim();
-    if (!text) return;
-
-    inputEl.value = '';
-    inputEl.style.height = 'auto';
-    sendBtn.disabled = true;
-    isBusy = true;
-
-    addUserMsg(text);
-    history.push({ role: 'user', content: text });
-
-    if (isImageRequest(text)) {
-      const prompt = extractPrompt(text);
-      addImageMsg(prompt);
-      history.push({ role: 'assistant', content: '[Generated image: ' + prompt + ']' });
-      return;
+    // Try to parse as presentation JSON
+    const trimmed = reply.trim();
+    let parsed = null;
+    if (isPresentationReq(text)) {
+      // Find JSON object in response
+      const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try { parsed = JSON.parse(jsonMatch[0]); } catch(e) {}
+      }
     }
 
-    addTyping();
-
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are Arc, a sharp and helpful AI assistant. Answer clearly and concisely. You can help with any topic — questions, writing, code, analysis, brainstorming, and more.' },
-            ...history
-          ]
-        })
+    if (parsed && parsed.presentation) {
+      // Show a summary bubble + trigger PPTX build
+      const slides = parsed.presentation.slides;
+      let summary = `**${parsed.presentation.title}**\n\n`;
+      slides.forEach((s, i) => {
+        summary += `**${i === 0 ? '🎯' : `${i}.`} ${s.title}**\n`;
+        if (s.bullets) s.bullets.forEach(b => { summary += `- ${b}\n`; });
+        summary += '\n';
       });
+      summary = summary.trim();
+      const group = addAI(summary);
+      await buildPresentation(parsed, group);
+    } else {
+      // Regular message — check for downloadable code
+      const group = addAI(reply);
 
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || 'Something went wrong. Please try again.';
-
-      removeTyping();
-      history.push({ role: 'assistant', content: reply });
-      addAiMsg(reply);
-    } catch (err) {
-      removeTyping();
-      addAiMsg('Having trouble connecting. Check your API config and try again.');
+      // Auto-attach download card for HTML files
+      const htmlMatch = reply.match(/```html([\s\S]*?)```/i);
+      if (htmlMatch) {
+        const code = htmlMatch[1].trim();
+        const blob = new Blob([code], { type: 'text/html' });
+        addFileCard(group, 'arc-page.html', blob, 'html');
+      }
     }
-
-    isBusy = false;
-    sendBtn.disabled = !inputEl.value.trim();
+  } catch (err) {
+    removeTyping();
+    addAI('Having trouble connecting. Check your API config and try again.');
   }
-</script>
 
+  isBusy = false;
+  sendBtn.disabled = !inputEl.value.trim();
+}
+</script>
 </body>
 </html>
