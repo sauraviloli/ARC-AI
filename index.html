@@ -676,30 +676,23 @@
     const t0 = Date.now();
 
     try {
+      const systemPrompt = `You are Arc, the AI intelligence assistant for First Circle — a leading fintech lender helping SMEs in Southeast Asia access working capital and business financing. You are knowledgeable, professional, and warm. You help business owners understand First Circle's financing products (purchase order financing, invoice financing, business loans), eligibility requirements, repayment terms, and general financial guidance for growing businesses. Keep answers concise (3-5 sentences), clear, and confident but approachable. Do not make up specific numbers. If asked something outside your scope, guide them to contact First Circle directly.`;
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: `You are Arc, the AI intelligence assistant for First Circle — a leading fintech lender helping SMEs in Southeast Asia access working capital and business financing.
-
-You are knowledgeable, professional, and warm. You help business owners understand:
-- First Circle's financing products (purchase order financing, invoice financing, business loans)
-- Eligibility requirements and application process
-- Repayment terms and interest rates (typical range: competitive market rates for SMEs)
-- How working capital lending works
-- General financial guidance for growing businesses
-
-Keep answers concise (3-5 sentences), clear, and use a tone that is confident but approachable. You represent a premium fintech brand. Do not make up specific numbers unless they are general market knowledge. If asked something outside your scope, guide them to contact First Circle directly.`,
-          messages: history
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...history
+          ]
         })
       });
 
       const data = await res.json();
-      const reply = data.content?.[0]?.text || 'I encountered an issue — please try again.';
+      const reply = data.choices?.[0]?.message?.content || 'I encountered an issue — please try again.';
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1) + 's';
-      const tokens = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
+      const tokens = (data.usage?.total_tokens || 0);
 
       removeTyping();
       history.push({ role: 'assistant', content: reply });
