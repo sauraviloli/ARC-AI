@@ -471,10 +471,10 @@ Make presentations 5-8 slides. Each slide should have 3-5 concise bullet points.
 
 // ── MODELS CONFIG ────────────────────────────────────────────────────────
 const MODELS = [
-  { id: 'chatgpt', name: 'ChatGPT', version: 'GPT-4o', color: '#10a37f', persona: 'You are ChatGPT, a helpful AI assistant made by OpenAI. Be clear, thorough, and slightly formal. Use markdown formatting.' },
-  { id: 'claude',  name: 'Claude',  version: 'Sonnet', color: '#d97706', persona: 'You are Claude, an AI assistant made by Anthropic. Be thoughtful, nuanced, and well-structured. Use markdown formatting.' },
-  { id: 'gemini',  name: 'Gemini',  version: 'Pro',    color: '#4285f4', persona: 'You are Gemini, a helpful AI assistant made by Google. Be concise, smart, and structured. Use markdown formatting.' },
-  { id: 'arc',     name: 'Arc',     version: 'v1',     color: '#1a1915', persona: SYSTEM },
+  { id: 'chatgpt', name: 'ChatGPT', version: 'GPT-4o', color: '#10a37f', persona: 'You are ChatGPT, a helpful AI assistant made by OpenAI. Be clear, thorough, and slightly formal. Use markdown formatting with bullet points, bold text, and headings where helpful.' },
+  { id: 'claude',  name: 'Claude',  version: 'Sonnet', color: '#d97706', persona: 'You are Claude, an AI assistant made by Anthropic. Be thoughtful, nuanced, and well-structured. Use markdown formatting with bullet points, bold text, and headings where helpful.' },
+  { id: 'gemini',  name: 'Gemini',  version: 'Pro',    color: '#4285f4', persona: 'You are Gemini, a helpful AI assistant made by Google. Be concise, smart, and structured. Use markdown formatting with bullet points, bold text, and headings where helpful.' },
+  { id: 'arc',     name: 'Arc',     version: 'v1',     color: '#1a1915', persona: 'You are Arc, a sharp and helpful AI assistant. Answer clearly and concisely using markdown formatting with bullet points, bold text, and headings where helpful.' },
 ];
 
 // ── STATE ─────────────────────────────────────────────────────────────────
@@ -785,8 +785,9 @@ async function sendCompare(text) {
   msgsEl.appendChild(panelsRow);
   scrollDown();
 
-  // Fire all 4 requests in parallel (all use Groq with different personas)
-  await Promise.all(panels.map(async ({ body, model }) => {
+  // Stagger requests slightly to avoid Groq rate limits
+  await Promise.all(panels.map(async ({ body, model }, idx) => {
+    await new Promise(r => setTimeout(r, idx * 300));
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -799,10 +800,31 @@ async function sendCompare(text) {
         })
       });
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || 'No response.';
+      if (data.error) throw new Error(data.error.message || data.error);
+      const reply = data.choices?.[0]?.message?.content;
+      if (!reply) throw new Error('Empty response');
       body.innerHTML = marked.parse(reply);
     } catch(err) {
-      body.innerHTML = '<span style="color:var(--text-2);font-size:13px">Could not get response.</span>';
+      // Retry once after 2s on failure
+      await new Promise(r => setTimeout(r, 2000));
+      try {
+        const res2 = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: model.persona },
+              { role: 'user', content: text }
+            ]
+          })
+        });
+        const data2 = await res2.json();
+        const reply2 = data2.choices?.[0]?.message?.content;
+        if (!reply2) throw new Error('Empty on retry');
+        body.innerHTML = marked.parse(reply2);
+      } catch(err2) {
+        body.innerHTML = '<span style="color:var(--text-2);font-size:13px">Rate limited — try again in a moment.</span>';
+      }
     }
     scrollDown();
   }));
